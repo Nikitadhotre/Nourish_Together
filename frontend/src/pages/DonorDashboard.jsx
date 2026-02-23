@@ -12,7 +12,9 @@ import {
   FaHome,
   FaGift,
   FaCoins,
-  FaUser
+  FaUser,
+  FaTimes,
+  FaEye
 } from 'react-icons/fa';
 
 const DonorDashboard = () => {
@@ -29,6 +31,10 @@ const DonorDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  
+  // Modal state for viewing donation details
+  const [selectedDonation, setSelectedDonation] = useState(null);
+  const [donationType, setDonationType] = useState(null); // 'food' or 'money'
 
   useEffect(() => {
     loadData();
@@ -43,8 +49,15 @@ const DonorDashboard = () => {
         donationsAPI.getMoneyDonations(),
       ]);
 
-      setDonations(Array.isArray(foodRes.data) ? foodRes.data : []);
-      setMoneyDonations(Array.isArray(moneyRes.data) ? moneyRes.data : []);
+      // Backend now returns only user's donations, so we can use directly
+      const foodData = Array.isArray(foodRes.data) ? foodRes.data : [];
+      const moneyData = Array.isArray(moneyRes.data) ? moneyRes.data : [];
+      
+      setDonations(foodData);
+      setMoneyDonations(moneyData);
+      
+      console.log('Food Donations:', foodData);
+      console.log('Money Donations:', moneyData);
     } catch (error) {
       console.error('Error loading data:', error);
       setDonations([]);
@@ -156,15 +169,11 @@ const DonorDashboard = () => {
     }
   };
 
-  /* ---------------- FILTER USER DATA ---------------- */
+  /* ---------------- CALCULATE STATS ---------------- */
 
-  const myFoodDonations = donations.filter(
-    d => d.donorId === localStorage.getItem('userId')
-  );
-
-  const myMoneyDonations = moneyDonations.filter(
-    d => d.donorId === localStorage.getItem('userId')
-  );
+  // Since backend now filters by user, use all donations
+  const myFoodDonations = donations;
+  const myMoneyDonations = moneyDonations;
 
   const totalFoodDonations = myFoodDonations.length;
   const activeDonations = myFoodDonations.filter(
@@ -180,27 +189,6 @@ const DonorDashboard = () => {
     0
   );
 
-  /* ---------------- TABLE CONFIG ---------------- */
-
-  const foodDonationColumns = [
-    { key: 'foodType', header: 'Food Type' },
-    { key: 'quantity', header: 'Quantity' },
-    { key: 'location', header: 'Location' },
-    {
-      key: 'status',
-      header: 'Status',
-    },
-  ];
-
-  const moneyDonationColumns = [
-    {
-      key: 'amount',
-      header: 'Amount',
-      render: (value) => `₹${value}`
-    },
-    { key: 'paymentId', header: 'Payment ID' },
-  ];
-
   /* ---------------- MENU ---------------- */
 
   const menuItems = [
@@ -211,6 +199,89 @@ const DonorDashboard = () => {
     { key: 'my-donations', label: 'My Donations', icon: FaUtensils },
   ];
 
+  /* ---------------- VIEW DONATION DETAILS ---------------- */
+
+  const viewFoodDonationDetails = (donation) => {
+    setSelectedDonation(donation);
+    setDonationType('food');
+  };
+
+  const viewMoneyDonationDetails = (donation) => {
+    setSelectedDonation(donation);
+    setDonationType('money');
+  };
+
+  const closeModal = () => {
+    setSelectedDonation(null);
+    setDonationType(null);
+  };
+
+  /* ---------------- STATUS BADGE ---------------- */
+
+  const getStatusBadge = (status) => {
+    const styles = {
+      pending: 'bg-yellow-100 text-yellow-800',
+      accepted: 'bg-blue-100 text-blue-800',
+      completed: 'bg-green-100 text-green-800',
+    };
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </span>
+    );
+  };
+
+  /* ---------------- ENHANCED TABLE COLUMNS ---------------- */
+
+  const enhancedFoodColumns = [
+    { key: 'foodType', header: 'Food Type' },
+    { key: 'quantity', header: 'Quantity' },
+    { key: 'location', header: 'Location' },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (value) => getStatusBadge(value),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (_, row) => (
+        <button
+          onClick={() => viewFoodDonationDetails(row)}
+          className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+        >
+          <FaEye /> View
+        </button>
+      ),
+    },
+  ];
+
+  const enhancedMoneyColumns = [
+    {
+      key: 'amount',
+      header: 'Amount',
+      render: (value) => `₹${value}`
+    },
+    { key: 'paymentId', header: 'Payment ID' },
+    {
+      key: 'date',
+      header: 'Date',
+      render: (value, row) => row.createdAt ? new Date(row.createdAt).toLocaleDateString() : '-',
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (_, row) => (
+        <button
+          onClick={() => viewMoneyDonationDetails(row)}
+          className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+        >
+          <FaEye /> View
+        </button>
+      ),
+    },
+  ];
+
   /* ---------------- ✅ MEMOIZED SECTIONS ---------------- */
 
   const sections = useMemo(() => ({
@@ -218,11 +289,22 @@ const DonorDashboard = () => {
       <div className="space-y-6">
         <h1 className="text-3xl font-bold">Donor Dashboard</h1>
 
-        <div className="grid grid-cols-4 gap-4">
-          <DashboardCard title="Food Donations" value={totalFoodDonations} icon={FaUtensils} />
-          <DashboardCard title="Active" value={activeDonations} icon={FaClock} />
-          <DashboardCard title="Completed" value={completedDonations} icon={FaCheckCircle} />
-          <DashboardCard title="Money Donated" value={`₹${totalMoneyDonated}`} icon={FaMoneyBillWave} />
+        {/* Food Donation Summary */}
+        <div>
+          <h2 className="text-xl font-semibold mb-3 text-green-700">🍎 Food Donations</h2>
+          <div className="grid grid-cols-3 gap-4">
+            <DashboardCard title="Total Food Donations" value={totalFoodDonations} icon={FaUtensils} color="green" />
+            <DashboardCard title="Active Donations" value={activeDonations} icon={FaClock} color="yellow" />
+            <DashboardCard title="Completed Donations" value={completedDonations} icon={FaCheckCircle} color="blue" />
+          </div>
+        </div>
+
+        {/* Money Donation Summary */}
+        <div>
+          <h2 className="text-xl font-semibold mb-3 text-orange-700">💰 Money Donations</h2>
+          <div className="grid grid-cols-1 gap-4">
+            <DashboardCard title="Total Money Donated" value={`₹${totalMoneyDonated}`} icon={FaMoneyBillWave} color="orange" />
+          </div>
         </div>
       </div>
     ),
@@ -269,9 +351,26 @@ const DonorDashboard = () => {
     ),
 
     'my-donations': () => (
-      <div className="space-y-6">
-        <DataTable columns={foodDonationColumns} data={myFoodDonations} />
-        <DataTable columns={moneyDonationColumns} data={myMoneyDonations} />
+      <div className="space-y-8">
+        {/* Food Donations Table */}
+        <div>
+          <h2 className="text-2xl font-bold mb-4 text-green-700">🍎 My Food Donations</h2>
+          {myFoodDonations.length > 0 ? (
+            <DataTable columns={enhancedFoodColumns} data={myFoodDonations} />
+          ) : (
+            <p className="text-gray-500">No food donations yet.</p>
+          )}
+        </div>
+
+        {/* Money Donations Table */}
+        <div>
+          <h2 className="text-2xl font-bold mb-4 text-orange-700">💰 My Money Donations</h2>
+          {myMoneyDonations.length > 0 ? (
+            <DataTable columns={enhancedMoneyColumns} data={myMoneyDonations} />
+          ) : (
+            <p className="text-gray-500">No money donations yet.</p>
+          )}
+        </div>
       </div>
     ),
 
@@ -294,11 +393,80 @@ const DonorDashboard = () => {
   ]);
 
   return (
-    <DashboardLayout
-      menuItems={menuItems}
-      sections={sections}
-      defaultSection="overview"
-    />
+    <>
+      <DashboardLayout
+        menuItems={menuItems}
+        sections={sections}
+        defaultSection="overview"
+      />
+      
+      {/* Donation Details Modal */}
+      {selectedDonation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold">
+                {donationType === 'food' ? '🍎 Food Donation Details' : '💰 Money Donation Details'}
+              </h2>
+              <button onClick={closeModal} className="text-gray-500 hover:text-gray-700">
+                <FaTimes className="w-6 h-6" />
+              </button>
+            </div>
+            
+            {donationType === 'food' ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-semibold text-gray-600">Food Type:</span>
+                  <span>{selectedDonation.foodType}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-semibold text-gray-600">Quantity:</span>
+                  <span>{selectedDonation.quantity}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-semibold text-gray-600">Location:</span>
+                  <span>{selectedDonation.location}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-semibold text-gray-600">Expiry Time:</span>
+                  <span>{selectedDonation.expiryTime ? new Date(selectedDonation.expiryTime).toLocaleString() : '-'}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-semibold text-gray-600">Status:</span>
+                  <span>{getStatusBadge(selectedDonation.status)}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-semibold text-gray-600">Created At:</span>
+                  <span>{selectedDonation.createdAt ? new Date(selectedDonation.createdAt).toLocaleString() : '-'}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-semibold text-gray-600">Amount:</span>
+                  <span className="text-green-600 font-bold">₹{selectedDonation.amount}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-semibold text-gray-600">Payment ID:</span>
+                  <span className="text-sm">{selectedDonation.paymentId}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-semibold text-gray-600">Date:</span>
+                  <span>{selectedDonation.createdAt ? new Date(selectedDonation.createdAt).toLocaleString() : '-'}</span>
+                </div>
+              </div>
+            )}
+            
+            <button 
+              onClick={closeModal}
+              className="mt-6 w-full bg-gray-600 text-white py-2 rounded hover:bg-gray-700"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

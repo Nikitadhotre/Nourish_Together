@@ -173,10 +173,18 @@ export const saveMoneyDonation = async (req, res, next) => {
 
 // @desc    Get money donations
 // @route   GET /api/donations/money
-// @access  Private (Admin)
+// @access  Private
 export const getMoneyDonations = async (req, res, next) => {
   try {
-    const donations = await MoneyDonation.find().populate('donorId', 'name email');
+    let query = {};
+
+    // If user is a donor, only show their own donations
+    if (req.user.role === 'donor') {
+      query.donorId = req.user.id;
+    }
+    // Admin can see all donations
+
+    const donations = await MoneyDonation.find(query).populate('donorId', 'name email');
 
     res.status(200).json({
       success: true,
