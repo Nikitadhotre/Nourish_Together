@@ -20,6 +20,9 @@ import {
 const DonorDashboard = () => {
   const [donations, setDonations] = useState([]);
   const [moneyDonations, setMoneyDonations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState('');
   const [formData, setFormData] = useState({
     foodType: '',
     quantity: '',
@@ -28,9 +31,7 @@ const DonorDashboard = () => {
   });
 
   const [moneyAmount, setMoneyAmount] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   
   // Modal state for viewing donation details
   const [selectedDonation, setSelectedDonation] = useState(null);
@@ -40,18 +41,28 @@ const DonorDashboard = () => {
     loadData();
   }, []);
 
+  /* ---------------- HELPER FUNCTION ---------------- */
+
+  const extractArray = (data) => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.data)) return data.data;
+    if (Array.isArray(data?.donations)) return data.donations;
+    return [];
+  };
+
   /* ---------------- LOAD DATA ---------------- */
 
   const loadData = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const [foodRes, moneyRes] = await Promise.all([
         donationsAPI.getFoodDonations(),
         donationsAPI.getMoneyDonations(),
       ]);
 
-      // Backend now returns only user's donations, so we can use directly
-      const foodData = Array.isArray(foodRes.data) ? foodRes.data : [];
-      const moneyData = Array.isArray(moneyRes.data) ? moneyRes.data : [];
+      const foodData = extractArray(foodRes.data);
+      const moneyData = extractArray(moneyRes.data);
       
       setDonations(foodData);
       setMoneyDonations(moneyData);
@@ -60,8 +71,11 @@ const DonorDashboard = () => {
       console.log('Money Donations:', moneyData);
     } catch (error) {
       console.error('Error loading data:', error);
+      setError('Failed to load donations. Please try again.');
       setDonations([]);
       setMoneyDonations([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -77,20 +91,17 @@ const DonorDashboard = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setLoading(true);
+    setSubmitting(true);
     setError('');
     setSuccess('');
 
     try {
       const res = await donationsAPI.createFoodDonation(formData);
-
-      const newDonation = res.data.data;
+      const newDonation = res.data.data || res.data;
 
       setDonations(prev => [...prev, newDonation]);
-
       setSuccess('✅ Food donated successfully!');
 
-      /* ✅ Auto hide after 3 sec */
       setTimeout(() => {
         setSuccess('');
       }, 3000);
@@ -105,7 +116,7 @@ const DonorDashboard = () => {
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to create donation');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -117,7 +128,7 @@ const DonorDashboard = () => {
       return;
     }
 
-    setLoading(true);
+    setSubmitting(true);
     setError('');
 
     try {
@@ -165,13 +176,12 @@ const DonorDashboard = () => {
     } catch (error) {
       setError('Failed to initiate payment');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   /* ---------------- CALCULATE STATS ---------------- */
 
-  // Since backend now filters by user, use all donations
   const myFoodDonations = donations;
   const myMoneyDonations = moneyDonations;
 
@@ -185,7 +195,7 @@ const DonorDashboard = () => {
   ).length;
 
   const totalMoneyDonated = myMoneyDonations.reduce(
-    (sum, d) => sum + d.amount,
+    (sum, d) => sum + (d.amount || 0),
     0
   );
 
@@ -282,12 +292,18 @@ const DonorDashboard = () => {
     },
   ];
 
-  /* ---------------- ✅ MEMOIZED SECTIONS ---------------- */
+  /* ---------------- MEMOIZED SECTIONS ---------------- */
 
   const sections = useMemo(() => ({
     overview: () => (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold">Donor Dashboard</h1>
+
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            {error}
+          </div>
+        )}
 
         {/* Food Donation Summary */}
         <div>
@@ -317,13 +333,13 @@ const DonorDashboard = () => {
         {error && <div className="text-red-600 mb-2">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-3 max-w-md">
-          <input name="foodType" value={formData.foodType} onChange={handleChange} placeholder="Food Type" className="w-full border p-2" />
-          <input name="quantity" value={formData.quantity} onChange={handleChange} placeholder="Quantity" className="w-full border p-2" />
-          <input name="location" value={formData.location} onChange={handleChange} placeholder="Location" className="w-full border p-2" />
-          <input type="datetime-local" name="expiryTime" value={formData.expiryTime} onChange={handleChange} className="w-full border p-2" />
+          <input name="foodType" value={formData.foodType} onChange={handleChange} placeholder="Food Type" className="w-full border p-2" required />
+          <input name="quantity" value={formData.quantity} onChange={handleChange} placeholder="Quantity" className="w-full border p-2" required />
+          <input name="location" value={formData.location} onChange={handleChange} placeholder="Location" className="w-full border p-2" required />
+          <input type="datetime-local" name="expiryTime" value={formData.expiryTime} onChange={handleChange} className="w-full border p-2" required />
 
-          <button className="bg-green-600 text-white px-4 py-2">
-            {loading ? 'Creating...' : 'Donate Food'}
+          <button className="bg-green-600 text-white px-4 py-2" disabled={submitting}>
+            {submitting ? 'Creating...' : 'Donate Food'}
           </button>
         </form>
       </div>
@@ -344,8 +360,8 @@ const DonorDashboard = () => {
           placeholder="Amount"
         />
 
-        <button onClick={handleMoneyDonation} className="ml-2 bg-orange-600 text-white px-4 py-2">
-          Donate
+        <button onClick={handleMoneyDonation} className="ml-2 bg-orange-600 text-white px-4 py-2" disabled={submitting}>
+          {submitting ? 'Processing...' : 'Donate'}
         </button>
       </div>
     ),
@@ -355,7 +371,9 @@ const DonorDashboard = () => {
         {/* Food Donations Table */}
         <div>
           <h2 className="text-2xl font-bold mb-4 text-green-700">🍎 My Food Donations</h2>
-          {myFoodDonations.length > 0 ? (
+          {loading ? (
+            <div className="text-center py-8">Loading...</div>
+          ) : myFoodDonations.length > 0 ? (
             <DataTable columns={enhancedFoodColumns} data={myFoodDonations} />
           ) : (
             <p className="text-gray-500">No food donations yet.</p>
@@ -365,7 +383,9 @@ const DonorDashboard = () => {
         {/* Money Donations Table */}
         <div>
           <h2 className="text-2xl font-bold mb-4 text-orange-700">💰 My Money Donations</h2>
-          {myMoneyDonations.length > 0 ? (
+          {loading ? (
+            <div className="text-center py-8">Loading...</div>
+          ) : myMoneyDonations.length > 0 ? (
             <DataTable columns={enhancedMoneyColumns} data={myMoneyDonations} />
           ) : (
             <p className="text-gray-500">No money donations yet.</p>
@@ -389,7 +409,8 @@ const DonorDashboard = () => {
     moneyAmount,
     myFoodDonations,
     myMoneyDonations,
-    loading
+    loading,
+    submitting
   ]);
 
   return (

@@ -29,10 +29,21 @@ const Register = () => {
     setError('');
 
     try {
-      await register(formData);
-      // After successful registration, I'll redirect the user to the intended page
-      const redirectUrl = searchParams.get('redirect') || '/';
-      navigate(redirectUrl);
+      const userData = await register(formData);
+      
+      // Redirect based on user role
+      let redirectPath = '/';
+      if (userData.role === 'donor') {
+        redirectPath = '/donor-dashboard';
+      } else if (userData.role === 'ngo') {
+        redirectPath = '/ngo-dashboard';
+      } else if (userData.role === 'volunteer') {
+        redirectPath = '/volunteer-dashboard';
+      } else if (userData.role === 'admin') {
+        redirectPath = '/admin-dashboard';
+      }
+      
+      navigate(redirectPath);
     } catch (error) {
       setError(error.response?.data?.message || 'Registration failed');
     } finally {

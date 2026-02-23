@@ -27,12 +27,21 @@ const Login = () => {
     setError('');
 
     try {
-      await login(formData);
-      // Redirect to the intended page after login
-      const redirectUrl = searchParams.get('redirect') || '/';
-      // Ensure redirectUrl is an absolute path (starts with /)
-      const absolutePath = redirectUrl.startsWith('/') ? redirectUrl : `/${redirectUrl}`;
-      navigate(absolutePath);
+      const userData = await login(formData);
+      
+      // Redirect based on user role
+      let redirectPath = '/';
+      if (userData.role === 'donor') {
+        redirectPath = '/donor-dashboard';
+      } else if (userData.role === 'ngo') {
+        redirectPath = '/ngo-dashboard';
+      } else if (userData.role === 'volunteer') {
+        redirectPath = '/volunteer-dashboard';
+      } else if (userData.role === 'admin') {
+        redirectPath = '/admin-dashboard';
+      }
+      
+      navigate(redirectPath);
     } catch (error) {
       setError(error.response?.data?.message || 'Login failed');
     } finally {

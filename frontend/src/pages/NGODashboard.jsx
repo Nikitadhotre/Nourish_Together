@@ -8,42 +8,53 @@ import { FaClock, FaCheckCircle, FaUtensils, FaHome, FaGift, FaHandsHelping, FaU
 
 const NGODashboard = () => {
   const [donations, setDonations] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     loadDonations();
   }, []);
 
+  const extractArray = (data) => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.data)) return data.data;
+    if (Array.isArray(data?.donations)) return data.donations;
+    return [];
+  };
+
   const loadDonations = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const res = await donationsAPI.getFoodDonations();
-      setDonations(res.data);
+      const donationsData = extractArray(res.data);
+      setDonations(donationsData);
     } catch (error) {
       console.error('Error loading donations:', error);
+      setError('Failed to load donations. Please try again.');
+      setDonations([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleAcceptDonation = async (donationId) => {
-    setLoading(true);
     try {
       await donationsAPI.acceptFoodDonation(donationId);
       loadDonations();
     } catch (error) {
       console.error('Error accepting donation:', error);
-    } finally {
-      setLoading(false);
+      alert('Failed to accept donation');
     }
   };
 
   const handleCompleteDonation = async (donationId) => {
-    setLoading(true);
     try {
       await donationsAPI.completeFoodDonation(donationId);
       loadDonations();
     } catch (error) {
       console.error('Error completing donation:', error);
-    } finally {
-      setLoading(false);
+      alert('Failed to complete donation');
     }
   };
 
@@ -54,7 +65,7 @@ const NGODashboard = () => {
   const pendingDonations = availableDonations.length;
   const acceptedCount = acceptedDonations.length;
   const completedCount = completedDonations.length;
-  const totalMealsDistributed = completedCount * 10; // Assuming 10 meals per donation
+  const totalMealsDistributed = completedCount * 10;
 
   const availableColumns = [
     { key: 'donorName', header: 'Donor Name' },
@@ -64,7 +75,7 @@ const NGODashboard = () => {
     {
       key: 'expiryTime',
       header: 'Expiry Time',
-      render: (value) => new Date(value).toLocaleString()
+      render: (value) => value ? new Date(value).toLocaleString() : '-'
     },
   ];
 
@@ -76,7 +87,7 @@ const NGODashboard = () => {
     {
       key: 'expiryTime',
       header: 'Expiry Time',
-      render: (value) => new Date(value).toLocaleString()
+      render: (value) => value ? new Date(value).toLocaleString() : '-'
     },
   ];
 
@@ -109,6 +120,12 @@ const NGODashboard = () => {
     overview: () => (
       <div className="space-y-8">
         <h1 className="text-3xl font-bold text-gray-900">NGO Dashboard</h1>
+
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            {error}
+          </div>
+        )}
 
         {/* Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -143,22 +160,30 @@ const NGODashboard = () => {
     'available-donations': () => (
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Available Food Donations</h1>
-        <DataTable
-          columns={availableColumns}
-          data={availableDonations}
-          actions={availableActions}
-        />
+        {loading ? (
+          <div className="text-center py-8">Loading...</div>
+        ) : (
+          <DataTable
+            columns={availableColumns}
+            data={availableDonations}
+            actions={availableActions}
+          />
+        )}
       </div>
     ),
 
     'accepted-donations': () => (
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Accepted Donations</h1>
-        <DataTable
-          columns={acceptedColumns}
-          data={acceptedDonations}
-          actions={acceptedActions}
-        />
+        {loading ? (
+          <div className="text-center py-8">Loading...</div>
+        ) : (
+          <DataTable
+            columns={acceptedColumns}
+            data={acceptedDonations}
+            actions={acceptedActions}
+          />
+        )}
       </div>
     ),
 
