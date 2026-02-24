@@ -42,7 +42,10 @@ export const getFoodDonations = async (req, res, next) => {
     }
     // Admin can see all
 
-    const donations = await FoodDonation.find(query).populate('donorId', 'name email');
+    const donations = await FoodDonation.find(query)
+      .populate('donorId', 'name email')
+      .populate('ngoId', 'name email')
+      .populate('volunteerId', 'name email');
 
     res.status(200).json({
       success: true,
@@ -76,6 +79,7 @@ export const acceptFoodDonation = async (req, res, next) => {
     }
 
     donation.status = 'accepted';
+    donation.ngoId = req.user.id;
     await donation.save();
 
     res.status(200).json({
@@ -109,6 +113,7 @@ export const completeFoodDonation = async (req, res, next) => {
     }
 
     donation.status = 'completed';
+    donation.volunteerId = req.user.id;
     await donation.save();
 
     res.status(200).json({

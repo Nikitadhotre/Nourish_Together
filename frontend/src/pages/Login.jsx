@@ -28,11 +28,36 @@ const Login = () => {
 
     try {
       await login(formData);
-      // Redirect to the intended page after login
-      const redirectUrl = searchParams.get('redirect') || '/';
-      // Ensure redirectUrl is an absolute path (starts with /)
-      const absolutePath = redirectUrl.startsWith('/') ? redirectUrl : `/${redirectUrl}`;
-      navigate(absolutePath);
+      
+      // Get role from localStorage (set by AuthContext)
+      const userRole = localStorage.getItem('userRole');
+      
+      // Redirect based on user role
+      let redirectPath = '/';
+      switch (userRole) {
+        case 'donor':
+          redirectPath = '/donor-dashboard';
+          break;
+        case 'ngo':
+          redirectPath = '/ngo-dashboard';
+          break;
+        case 'volunteer':
+          redirectPath = '/volunteer-dashboard';
+          break;
+        case 'admin':
+          redirectPath = '/admin-dashboard';
+          break;
+        default:
+          redirectPath = '/';
+      }
+      
+      // Allow override via redirect param
+      const redirectUrl = searchParams.get('redirect');
+      if (redirectUrl) {
+        redirectPath = redirectUrl.startsWith('/') ? redirectUrl : `/${redirectUrl}`;
+      }
+      
+      navigate(redirectPath);
     } catch (error) {
       setError(error.response?.data?.message || 'Login failed');
     } finally {

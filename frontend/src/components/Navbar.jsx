@@ -1,15 +1,36 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useState, useRef, useEffect } from 'react';
-import { FaUser, FaTachometerAlt, FaSignOutAlt, FaChevronDown, FaBars } from 'react-icons/fa';
-import toast from 'react-hot-toast';
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useState, useRef, useEffect } from "react";
+import {
+  FaUser,
+  FaTachometerAlt,
+  FaSignOutAlt,
+  FaChevronDown,
+  FaBars,
+  FaHospital,
+  FaHandHoldingHeart,
+  FaUsers,
+  FaUserShield,
+} from "react-icons/fa";
+import toast from "react-hot-toast";
 
 const Navbar = ({ isDashboard = false }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [userName, setUserName] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  // Initialize userName from localStorage or user object
+  useEffect(() => {
+    const storedName = localStorage.getItem("userName");
+    if (storedName) {
+      setUserName(storedName);
+    } else if (user?.name) {
+      setUserName(user.name);
+    }
+  }, [user]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -19,37 +40,48 @@ const Navbar = ({ isDashboard = false }) => {
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleLogout = () => {
-    toast.success('Logged out successfully!');
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('userEmail');
+    toast.success("Logged out successfully!");
+    setUserName("");
     logout();
-    navigate('/');
+    navigate("/");
   };
 
-  const getDashboardLink = () => {
+  const getUserDashboard = () => {
     switch (user?.role) {
-      case 'donor':
-        return '/donor-dashboard';
-      case 'ngo':
-        return '/ngo-dashboard';
-      case 'volunteer':
-        return '/volunteer-dashboard';
-      case 'admin':
-        return '/admin-dashboard';
+      case "donor":
+        return { path: "/donor-dashboard", label: "Donor Dashboard", icon: FaHandHoldingHeart };
+      case "ngo":
+        return { path: "/ngo-dashboard", label: "NGO Dashboard", icon: FaHospital };
+      case "volunteer":
+        return { path: "/volunteer-dashboard", label: "Volunteer Dashboard", icon: FaUsers };
+      case "admin":
+        return { path: "/admin-dashboard", label: "Admin Dashboard", icon: FaUserShield };
       default:
-        return '/';
+        return null;
     }
   };
 
+  const getDashboardLink = () => {
+    const dashboard = getUserDashboard();
+    return dashboard ? dashboard.path : "/";
+  };
+
+  const getAllDashboardLinks = () => {
+    return [
+      { path: "/donor-dashboard", label: "Donor Dashboard", icon: FaHandHoldingHeart },
+      { path: "/ngo-dashboard", label: "NGO Dashboard", icon: FaHospital },
+      { path: "/volunteer-dashboard", label: "Volunteer Dashboard", icon: FaUsers },
+      { path: "/admin-dashboard", label: "Admin Dashboard", icon: FaUserShield },
+    ];
+  };
+
   const getProfileLink = () => {
-    return '/profile';
+    return "/profile";
   };
 
   const navLinks = (
@@ -76,14 +108,16 @@ const Navbar = ({ isDashboard = false }) => {
   );
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 bg-white shadow-lg z-50 ${isDashboard ? 'dashboard-navbar' : ''}`}>
+    <nav
+      className={`fixed top-0 left-0 right-0 bg-white shadow-lg z-50 ${isDashboard ? "dashboard-navbar" : ""}`}
+    >
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-4">
           {/* Logo */}
           <Link to="/" className="flex-shrink-0">
-            <img 
-              src="/src/assets/Nourish Together logo.png" 
-              alt="Nourish Together Logo" 
+            <img
+              src="/src/assets/Nourish Together logo.png"
+              alt="Nourish Together Logo"
               className="h-10 w-auto"
             />
           </Link>
@@ -95,7 +129,7 @@ const Navbar = ({ isDashboard = false }) => {
 
           {/* Right Side - Auth Buttons or User Menu */}
           <div className="flex items-center space-x-4">
-{user ? (
+            {user || userName ? (
               <>
                 {/* User Dropdown */}
                 <div className="relative" ref={dropdownRef}>
@@ -107,26 +141,31 @@ const Navbar = ({ isDashboard = false }) => {
                       <FaUser className="text-green-600 text-sm" />
                     </div>
                     <span className="hidden md:inline-block text-gray-700 font-medium max-w-[120px] truncate">
-                      {user.name}
+                      {userName || user?.name}
                     </span>
-                    <FaChevronDown 
-                      className={`text-gray-500 text-xs transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} 
+                    <FaChevronDown
+                      className={`text-gray-500 text-xs transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`}
                     />
                   </button>
 
                   {/* Dropdown Menu */}
-                  <div 
+                  <div
                     className={`absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 border border-gray-100 transform transition-all duration-200 ease-out ${
-                      dropdownOpen 
-                        ? 'opacity-100 translate-y-0 visible' 
-                        : 'opacity-0 -translate-y-2 invisible'
+                      dropdownOpen
+                        ? "opacity-100 translate-y-0 visible"
+                        : "opacity-0 -translate-y-2 invisible"
                     }`}
                   >
                     <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
-                      <p className="text-xs text-gray-500 capitalize">{user.role}</p>
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {userName || user?.name}
+                      </p>
+                      <p className="text-xs text-gray-500 capitalize">
+                        {user?.role}
+                      </p>
                     </div>
-                    
+
+
                     <Link
                       to={getProfileLink()}
                       className="flex items-center px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors duration-200"
@@ -135,16 +174,24 @@ const Navbar = ({ isDashboard = false }) => {
                       <FaUser className="mr-3 text-gray-400" />
                       Profile
                     </Link>
+
                     
-                    <Link
-                      to={getDashboardLink()}
-                      className="flex items-center px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors duration-200"
-                      onClick={() => setDropdownOpen(false)}
-                    >
-                      <FaTachometerAlt className="mr-3 text-gray-400" />
-                      Dashboard
-                    </Link>
-                    
+                    {(() => {
+                      const userDashboard = getUserDashboard();
+                      if (!userDashboard) return null;
+                      const Icon = userDashboard.icon;
+                      return (
+                        <Link
+                          to={userDashboard.path}
+                          className="flex items-center px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors duration-200"
+                          onClick={() => setDropdownOpen(false)}
+                        >
+                          <Icon className="mr-3 text-gray-400" />
+                          {userDashboard.label}
+                        </Link>
+                      );
+                    })()}
+
                     <button
                       onClick={handleLogout}
                       className="flex items-center w-full px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-200"
@@ -183,7 +230,9 @@ const Navbar = ({ isDashboard = false }) => {
         </div>
 
         {/* Mobile Menu */}
-        <div className={`md:hidden pb-4 overflow-hidden transition-all duration-300 ${mobileMenuOpen ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'}`}>
+        <div
+          className={`md:hidden pb-4 overflow-hidden transition-all duration-300 ${mobileMenuOpen ? "max-h-48 opacity-100" : "max-h-0 opacity-0"}`}
+        >
           <div className="flex flex-col space-y-2 pt-2 border-t border-gray-100">
             {navLinks}
             {user && (

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { donationsAPI } from '../services/api';
+import { donationsAPI, authAPI } from '../services/api';
 import DashboardLayout from '../components/DashboardLayout';
 import DashboardCard from '../components/DashboardCard';
 import DataTable from '../components/DataTable';
@@ -19,21 +19,24 @@ const AdminDashboard = () => {
   const [foodDonations, setFoodDonations] = useState([]);
   const [moneyDonations, setMoneyDonations] = useState([]);
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
+    setLoading(true);
     try {
-      const [foodRes, moneyRes] = await Promise.all([
+      const [foodRes, moneyRes, usersRes] = await Promise.all([
         donationsAPI.getFoodDonations(),
         donationsAPI.getMoneyDonations(),
+        authAPI.getUsers(),
       ]);
 
       console.log("Food Response:", foodRes.data);
       console.log("Money Response:", moneyRes.data);
+      console.log("Users Response:", usersRes.data);
 
       setFoodDonations(
         Array.isArray(foodRes.data.data) ? foodRes.data.data : []
@@ -43,26 +46,33 @@ const AdminDashboard = () => {
         Array.isArray(moneyRes.data.data) ? moneyRes.data.data : []
       );
 
-      // Mock users
-      setUsers([
-        { _id: '1', name: 'John Donor', email: 'john@example.com', role: 'donor' },
-        { _id: '2', name: 'NGO Helper', email: 'ngo@example.com', role: 'ngo' },
-        { _id: '3', name: 'Volunteer Joe', email: 'volunteer@example.com', role: 'volunteer' },
-      ]);
+      setUsers(
+        Array.isArray(usersRes.data.data) ? usersRes.data.data : []
+      );
     } catch (error) {
       console.error('Error loading data:', error);
       setFoodDonations([]);
       setMoneyDonations([]);
+      setUsers([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleUserAction = async (userId, action) => {
+    if (action === 'delete') {
+      if (!window.confirm('Are you sure you want to delete this user?')) {
+        return;
+      }
+    }
     setLoading(true);
     try {
-      console.log(`${action} user ${userId}`);
+      await authAPI.deleteUser(userId);
+      alert('User deleted successfully');
       loadData();
     } catch (error) {
       console.error(`Error ${action}ing user:`, error);
+      alert('Failed to delete user');
     } finally {
       setLoading(false);
     }
@@ -71,6 +81,7 @@ const AdminDashboard = () => {
   const totalUsers = users.length;
   const totalNGOs = users.filter(u => u.role === 'ngo').length;
   const totalVolunteers = users.filter(u => u.role === 'volunteer').length;
+  const totalDonors = users.filter(u => u.role === 'donor').length;
 
   const totalFoodDonated = Array.isArray(foodDonations)
     ? foodDonations.reduce(
@@ -98,7 +109,9 @@ const AdminDashboard = () => {
             ? 'bg-green-100 text-green-800'
             : value === 'ngo'
             ? 'bg-blue-100 text-blue-800'
-            : 'bg-purple-100 text-purple-800'
+            : value === 'volunteer'
+            ? 'bg-purple-100 text-purple-800'
+            : 'bg-gray-100 text-gray-800'
         }`}>
           {value}
         </span>
@@ -169,7 +182,7 @@ const AdminDashboard = () => {
       <DataTable columns={moneyDonationColumns} data={moneyDonations} />
     ),
 
-profile: () => (
+    profile: () => (
       <Profile />
     ),
   };

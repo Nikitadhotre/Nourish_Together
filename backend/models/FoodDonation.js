@@ -27,6 +27,14 @@ const foodDonationSchema = new mongoose.Schema({
     enum: ['pending', 'accepted', 'completed'],
     default: 'pending',
   },
+  ngoId: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'User',
+  },
+  volunteerId: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'User',
+  },
 }, {
   timestamps: true,
 });

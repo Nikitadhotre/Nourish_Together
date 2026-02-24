@@ -33,33 +33,33 @@ function App() {
               <Route
                 path="/donor-dashboard"
                 element={
-                  // <PrivateRoute allowedRoles={['donor']}>
+                  <PrivateRoute allowedRoles={['donor']}>
                     <DonorDashboard />
-                  /* </PrivateRoute> */
+                  </PrivateRoute>
                 }
               />
               <Route
                 path="/ngo-dashboard"
                 element={
-                  // <PrivateRoute allowedRoles={['ngo']}>
+                  <PrivateRoute allowedRoles={['ngo']}>
                     <NGODashboard />
-                  /* </PrivateRoute> */
+                  </PrivateRoute>
                 }
               />
               <Route
                 path="/volunteer-dashboard"
                 element={
-                  // <PrivateRoute allowedRoles={['volunteer']}>
+                  <PrivateRoute allowedRoles={['volunteer']}>
                     <VolunteerDashboard />
-                  /* </PrivateRoute> */
+                  </PrivateRoute>
                 }
               />
               <Route
                 path="/admin-dashboard"
                 element={
-                  // <PrivateRoute allowedRoles={['admin']}>
+                  <PrivateRoute allowedRoles={['admin']}>
                     <AdminDashboard />
-                  /* </PrivateRoute> */
+                  </PrivateRoute>
                 }
               />
               <Route path="/payment" element={<Payment />} />

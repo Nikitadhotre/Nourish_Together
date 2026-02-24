@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { donationsAPI } from '../services/api';
 import DashboardLayout from '../components/DashboardLayout';
 import DashboardCard from '../components/DashboardCard';
@@ -16,6 +17,7 @@ import {
 } from 'react-icons/fa';
 
 const DonorDashboard = () => {
+  const navigate = useNavigate();
   const [donations, setDonations] = useState([]);
   const [moneyDonations, setMoneyDonations] = useState([]);
   const [formData, setFormData] = useState({
@@ -25,7 +27,6 @@ const DonorDashboard = () => {
     expiryTime: '',
   });
 
-  const [moneyAmount, setMoneyAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -37,18 +38,21 @@ const DonorDashboard = () => {
   /* ---------------- LOAD DATA ---------------- */
 
   const loadData = async () => {
+    setLoading(true);
     try {
       const [foodRes, moneyRes] = await Promise.all([
         donationsAPI.getFoodDonations(),
         donationsAPI.getMoneyDonations(),
       ]);
 
-      setDonations(Array.isArray(foodRes.data) ? foodRes.data : []);
-      setMoneyDonations(Array.isArray(moneyRes.data) ? moneyRes.data : []);
+      setDonations(Array.isArray(foodRes.data.data) ? foodRes.data.data : []);
+      setMoneyDonations(Array.isArray(moneyRes.data.data) ? moneyRes.data.data : []);
     } catch (error) {
       console.error('Error loading data:', error);
       setDonations([]);
       setMoneyDonations([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -96,74 +100,14 @@ const DonorDashboard = () => {
     }
   };
 
-  /* ---------------- MONEY DONATION ---------------- */
-
-  const handleMoneyDonation = async () => {
-    if (!moneyAmount || moneyAmount < 1) {
-      setError('Please enter a valid amount');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const orderRes = await donationsAPI.createMoneyDonationOrder(parseInt(moneyAmount));
-      const order = orderRes.data.order;
-
-      const options = {
-        key: 'rzp_test_YOUR_TEST_KEY_ID',
-        amount: order.amount,
-        currency: order.currency,
-        name: 'Nourish Together',
-        description: 'Food Relief Donation',
-        order_id: order.id,
-
-        handler: async function (response) {
-          try {
-            await donationsAPI.saveMoneyDonation({
-              amount: parseInt(moneyAmount),
-              paymentId: response.razorpay_payment_id,
-            });
-
-            setSuccess('✅ Payment successful. Thank you!');
-            setMoneyAmount('');
-
-            setTimeout(() => {
-              setSuccess('');
-            }, 3000);
-
-            loadData();
-
-          } catch (error) {
-            alert('Payment succeeded but saving failed.');
-          }
-        },
-
-        prefill: {
-          name: localStorage.getItem('userName') || '',
-          email: localStorage.getItem('userEmail') || '',
-        },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-
-    } catch (error) {
-      setError('Failed to initiate payment');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   /* ---------------- FILTER USER DATA ---------------- */
 
   const myFoodDonations = donations.filter(
-    d => d.donorId === localStorage.getItem('userId')
+    d => d.donorId && (d.donorId._id === localStorage.getItem('userId') || d.donorId === localStorage.getItem('userId'))
   );
 
   const myMoneyDonations = moneyDonations.filter(
-    d => d.donorId === localStorage.getItem('userId')
+    d => d.donorId && (d.donorId._id === localStorage.getItem('userId') || d.donorId === localStorage.getItem('userId'))
   );
 
   const totalFoodDonations = myFoodDonations.length;
@@ -250,20 +194,12 @@ const DonorDashboard = () => {
     'donate-money': () => (
       <div>
         <h1 className="text-3xl font-bold mb-6">Donate Money</h1>
-
-        {success && <div className="text-green-600 mb-2">{success}</div>}
-        {error && <div className="text-red-600 mb-2">{error}</div>}
-
-        <input
-          type="number"
-          value={moneyAmount}
-          onChange={(e) => setMoneyAmount(e.target.value)}
-          className="border p-2"
-          placeholder="Amount"
-        />
-
-        <button onClick={handleMoneyDonation} className="ml-2 bg-orange-600 text-white px-4 py-2">
-          Donate
+        <p className="text-gray-600 mb-6">Click the button below to proceed to the secure payment page.</p>
+        <button 
+          onClick={() => navigate('/payment')} 
+          className="bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-700 transition-colors"
+        >
+          Proceed to Payment
         </button>
       </div>
     ),
@@ -287,10 +223,10 @@ const DonorDashboard = () => {
     success,
     error,
     formData,
-    moneyAmount,
     myFoodDonations,
     myMoneyDonations,
-    loading
+    loading,
+    navigate
   ]);
 
   return (

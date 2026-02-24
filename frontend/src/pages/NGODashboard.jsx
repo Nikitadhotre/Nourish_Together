@@ -15,11 +15,15 @@ const NGODashboard = () => {
   }, []);
 
   const loadDonations = async () => {
+    setLoading(true);
     try {
       const res = await donationsAPI.getFoodDonations();
-      setDonations(res.data);
+      setDonations(Array.isArray(res.data.data) ? res.data.data : []);
     } catch (error) {
       console.error('Error loading donations:', error);
+      setDonations([]);
+    } finally {
+      setLoading(false);
     }
   };
 

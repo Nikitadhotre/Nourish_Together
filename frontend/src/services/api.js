@@ -21,6 +21,8 @@ export const authAPI = {
   register: (userData) => API.post("/auth/register", userData),
   getMe: () => API.get("/auth/me"),
   updateProfile: (profileData) => API.put("/auth/profile", profileData),
+  getUsers: () => API.get("/auth/users"),
+  deleteUser: (id) => API.delete(`/auth/users/${id}`),
 };
 
 export const donationsAPI = {

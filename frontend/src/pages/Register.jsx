@@ -30,9 +30,33 @@ const Register = () => {
 
     try {
       await register(formData);
-      // After successful registration, I'll redirect the user to the intended page
-      const redirectUrl = searchParams.get('redirect') || '/';
-      navigate(redirectUrl);
+      
+      // Redirect based on selected role
+      let redirectPath = '/';
+      switch (formData.role) {
+        case 'donor':
+          redirectPath = '/donor-dashboard';
+          break;
+        case 'ngo':
+          redirectPath = '/ngo-dashboard';
+          break;
+        case 'volunteer':
+          redirectPath = '/volunteer-dashboard';
+          break;
+        case 'admin':
+          redirectPath = '/admin-dashboard';
+          break;
+        default:
+          redirectPath = '/';
+      }
+      
+      // Allow override via redirect param
+      const redirectUrl = searchParams.get('redirect');
+      if (redirectUrl) {
+        redirectPath = redirectUrl.startsWith('/') ? redirectUrl : `/${redirectUrl}`;
+      }
+      
+      navigate(redirectPath);
     } catch (error) {
       setError(error.response?.data?.message || 'Registration failed');
     } finally {
@@ -163,6 +187,7 @@ const Register = () => {
                     <option value="donor">🍽️ Food Donor - Share surplus food</option>
                     <option value="ngo">🏢 NGO - Help distribute food</option>
                     <option value="volunteer">🚚 Volunteer - Deliver donations</option>
+                    <option value="admin">⚙️ Admin - Manage platform</option>
                   </select>
                   <svg className="absolute right-3 top-3.5 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

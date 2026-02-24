@@ -9,10 +9,6 @@ const Sidebar = ({ menuItems, activeSection, onSectionChange, className = '' }) 
 
   const handleLogout = () => {
     toast.success('Logged out successfully!');
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('userEmail');
     logout();
     navigate('/');
   };
