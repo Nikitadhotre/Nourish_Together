@@ -30,9 +30,32 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await authAPI.getMe();
       setUser(res.data);
+      // Also save user data to localStorage for offline access
+      // Backend returns "id" not "_id"
+      localStorage.setItem('userId', res.data.id || res.data._id);
+      localStorage.setItem('userName', res.data.name);
+      localStorage.setItem('userEmail', res.data.email);
+      localStorage.setItem('userRole', res.data.role);
     } catch (error) {
-      localStorage.removeItem('token');
-      delete axios.defaults.headers.common['Authorization'];
+      // Try to load from localStorage as fallback
+      const userId = localStorage.getItem('userId');
+      const userName = localStorage.getItem('userName');
+      const userEmail = localStorage.getItem('userEmail');
+      const userRole = localStorage.getItem('userRole');
+      
+      if (userId && userName) {
+        // Restore basic user data from localStorage
+        setUser({
+          _id: userId,
+          id: userId,
+          name: userName,
+          email: userEmail,
+          role: userRole,
+        });
+      } else {
+        localStorage.removeItem('token');
+        delete axios.defaults.headers.common['Authorization'];
+      }
     } finally {
       setLoading(false);
     }
@@ -42,7 +65,8 @@ export const AuthProvider = ({ children }) => {
     const res = await authAPI.login(credentials);
     const { token, data: userData } = res.data;
     localStorage.setItem('token', token);
-    localStorage.setItem('userId', userData._id || userData.id);
+    // Backend returns "id" not "_id", so use userData.id
+    localStorage.setItem('userId', userData.id);
     localStorage.setItem('userName', userData.name);
     localStorage.setItem('userEmail', userData.email);
     localStorage.setItem('userRole', userData.role);
@@ -55,7 +79,8 @@ export const AuthProvider = ({ children }) => {
     const res = await authAPI.register(userData);
     const { token, data: newUser } = res.data;
     localStorage.setItem('token', token);
-    localStorage.setItem('userId', newUser._id || newUser.id);
+    // Backend returns "id" not "_id", so use newUser.id
+    localStorage.setItem('userId', newUser.id);
     localStorage.setItem('userName', newUser.name);
     localStorage.setItem('userEmail', newUser.email);
     localStorage.setItem('userRole', newUser.role);

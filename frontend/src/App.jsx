@@ -20,7 +20,7 @@ function App() {
     <AuthProvider>
       <Toaster position="top-center" toastOptions={{ marginTop: '80px' }} />
       <Router>
-        <div className="min-h-screen bg-gray-50" style={{ backgroundImage: `url('/images/HPimg2.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+        <div className="min-h-screen bg-gray-50">
           <Navbar />
           <main className="container mx-auto pt-16">
             <Routes>

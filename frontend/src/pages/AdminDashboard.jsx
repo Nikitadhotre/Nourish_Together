@@ -51,6 +51,7 @@ const AdminDashboard = () => {
       );
     } catch (error) {
       console.error('Error loading data:', error);
+      setError('Failed to load data. Please try again.');
       setFoodDonations([]);
       setMoneyDonations([]);
       setUsers([]);
@@ -135,7 +136,7 @@ const AdminDashboard = () => {
     {
       key: 'createdAt',
       header: 'Date',
-      render: (value) => new Date(value).toLocaleDateString(),
+      render: (value) => value ? new Date(value).toLocaleDateString() : '-',
     },
   ];
 
@@ -160,12 +161,18 @@ const AdminDashboard = () => {
       <div className="space-y-8">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
 
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            {error}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-          <DashboardCard title="Total Users" value={totalUsers} icon={FaUsers} />
-          <DashboardCard title="Total NGOs" value={totalNGOs} icon={FaBuilding} />
-          <DashboardCard title="Total Volunteers" value={totalVolunteers} icon={FaUser} />
-          <DashboardCard title="Total Food Donated" value={totalFoodDonated} icon={FaUtensils} />
-          <DashboardCard title="Total Money Donated" value={`₹${totalMoneyDonated}`} icon={FaMoneyBillWave} />
+          <DashboardCard title="Total Users" value={totalUsers} icon={FaUsers} color="blue" />
+          <DashboardCard title="Total NGOs" value={totalNGOs} icon={FaBuilding} color="green" />
+          <DashboardCard title="Total Volunteers" value={totalVolunteers} icon={FaUser} color="purple" />
+          <DashboardCard title="Total Food Donated" value={totalFoodDonated} icon={FaUtensils} color="orange" />
+          <DashboardCard title="Total Money Donated" value={`₹${totalMoneyDonated}`} icon={FaMoneyBillWave} color="yellow" />
         </div>
       </div>
     ),
@@ -182,6 +189,7 @@ const AdminDashboard = () => {
       <DataTable columns={moneyDonationColumns} data={moneyDonations} />
     ),
 
+    profile: () => (
     profile: () => (
       <Profile />
     ),
