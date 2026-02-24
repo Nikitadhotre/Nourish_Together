@@ -20,6 +20,7 @@ const AdminDashboard = () => {
   const [moneyDonations, setMoneyDonations] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     loadData();
@@ -189,7 +190,6 @@ const AdminDashboard = () => {
       <DataTable columns={moneyDonationColumns} data={moneyDonations} />
     ),
 
-    profile: () => (
     profile: () => (
       <Profile />
     ),

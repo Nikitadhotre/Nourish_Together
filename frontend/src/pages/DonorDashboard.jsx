@@ -23,18 +23,17 @@ const DonorDashboard = () => {
   const [donations, setDonations] = useState([]);
   const [moneyDonations, setMoneyDonations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [selectedDonation, setSelectedDonation] = useState(null);
+  const [donationType, setDonationType] = useState(null);
   const [formData, setFormData] = useState({
     foodType: '',
     quantity: '',
     location: '',
     expiryTime: '',
   });
-
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     loadData();
@@ -66,8 +65,6 @@ const DonorDashboard = () => {
       setError('Failed to load donations. Please try again.');
       setDonations([]);
       setMoneyDonations([]);
-    } finally {
-      setLoading(false);
     } finally {
       setLoading(false);
     }
