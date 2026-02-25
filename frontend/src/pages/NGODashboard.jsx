@@ -65,7 +65,11 @@ const NGODashboard = () => {
   const totalMealsDistributed = completedCount * 10;
 
   const availableColumns = [
-    { key: 'donorName', header: 'Donor Name' },
+    { 
+      key: 'donorName', 
+      header: 'Donor Name',
+      render: (value, row) => row.donorId?.name || row.donorId?.email || 'N/A'
+    },
     { key: 'foodType', header: 'Food Type' },
     { key: 'quantity', header: 'Quantity' },
     { key: 'location', header: 'Location' },
@@ -77,7 +81,11 @@ const NGODashboard = () => {
   ];
 
   const acceptedColumns = [
-    { key: 'donorName', header: 'Donor Name' },
+    { 
+      key: 'donorName', 
+      header: 'Donor Name',
+      render: (value, row) => row.donorId?.name || row.donorId?.email || 'N/A'
+    },
     { key: 'foodType', header: 'Food Type' },
     { key: 'quantity', header: 'Quantity' },
     { key: 'location', header: 'Location' },
