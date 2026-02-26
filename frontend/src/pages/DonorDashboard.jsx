@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { donationsAPI } from '../services/api';
 import DashboardLayout from '../components/DashboardLayout';
@@ -72,14 +72,14 @@ const DonorDashboard = () => {
 
   /* ---------------- FORM HANDLING ---------------- */
 
-  const handleChange = (e) => {
+  const handleChange = useCallback((e) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
-  };
+  }, []);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
 
     setSubmitting(true);
@@ -109,7 +109,7 @@ const DonorDashboard = () => {
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [formData]);
 
   /* ---------------- CALCULATE STATS ---------------- */
 
@@ -228,117 +228,108 @@ const DonorDashboard = () => {
     },
   ];
 
-  /* ---------------- MEMOIZED SECTIONS ---------------- */
+  /* ---------------- SECTIONS ---------------- */
+
+  const renderOverview = useCallback(() => (
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold">Donor Dashboard</h1>
+
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
+
+      {/* Food Donation Summary */}
+      <div>
+        <h2 className="text-xl font-semibold mb-3 text-green-700">🍎 Food Donations</h2>
+        <div className="grid grid-cols-3 gap-4">
+          <DashboardCard title="Total Food Donations" value={totalFoodDonations} icon={FaUtensils} color="green" />
+          <DashboardCard title="Active Donations" value={activeDonations} icon={FaClock} color="yellow" />
+          <DashboardCard title="Completed Donations" value={completedDonations} icon={FaCheckCircle} color="blue" />
+        </div>
+      </div>
+
+      {/* Money Donation Summary */}
+      <div>
+        <h2 className="text-xl font-semibold mb-3 text-orange-700">💰 Money Donations</h2>
+        <div className="grid grid-cols-1 gap-4">
+          <DashboardCard title="Total Money Donated" value={`₹${totalMoneyDonated}`} icon={FaMoneyBillWave} color="orange" />
+        </div>
+      </div>
+    </div>
+  ), [error, totalFoodDonations, activeDonations, completedDonations, totalMoneyDonated]);
+
+  const renderDonateFood = useCallback(() => (
+    <div>
+      <h1 className="text-3xl font-bold mb-6">Donate Food</h1>
+
+      {success && <div className="text-green-600 mb-2">{success}</div>}
+      {error && <div className="text-red-600 mb-2">{error}</div>}
+
+      <form onSubmit={handleSubmit} className="space-y-3 max-w-md">
+        <input name="foodType" value={formData.foodType} onChange={handleChange} placeholder="Food Type" className="w-full border p-2" required />
+        <input name="quantity" value={formData.quantity} onChange={handleChange} placeholder="Quantity" className="w-full border p-2" required />
+        <input name="location" value={formData.location} onChange={handleChange} placeholder="Location" className="w-full border p-2" required />
+        <input type="datetime-local" name="expiryTime" value={formData.expiryTime} onChange={handleChange} className="w-full border p-2" required />
+
+        <button className="bg-green-600 text-white px-4 py-2" disabled={submitting}>
+          {submitting ? 'Creating...' : 'Donate Food'}
+        </button>
+      </form>
+    </div>
+  ), [formData, success, error, handleSubmit, submitting]);
+
+  const renderDonateMoney = useCallback(() => (
+    <div>
+      <h1 className="text-3xl font-bold mb-6">Donate Money</h1>
+      <p className="text-gray-600 mb-6">Click the button below to proceed to the secure payment page.</p>
+      <button 
+        onClick={() => navigate('/payment')} 
+        className="bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-700 transition-colors"
+      >
+        Proceed to Payment
+      </button>
+    </div>
+  ), [navigate]);
+
+  const renderMyDonations = useCallback(() => (
+    <div className="space-y-8">
+      {/* Food Donations Table */}
+      <div>
+        <h2 className="text-2xl font-bold mb-4 text-green-700">🍎 My Food Donations</h2>
+        {loading ? (
+          <div className="text-center py-8">Loading...</div>
+        ) : myFoodDonations.length > 0 ? (
+          <DataTable columns={enhancedFoodColumns} data={myFoodDonations} />
+        ) : (
+          <p className="text-gray-500">No food donations yet.</p>
+        )}
+      </div>
+
+      {/* Money Donations Table */}
+      <div>
+        <h2 className="text-2xl font-bold mb-4 text-orange-700">💰 My Money Donations</h2>
+        {loading ? (
+          <div className="text-center py-8">Loading...</div>
+        ) : myMoneyDonations.length > 0 ? (
+          <DataTable columns={enhancedMoneyColumns} data={myMoneyDonations} />
+        ) : (
+          <p className="text-gray-500">No money donations yet.</p>
+        )}
+      </div>
+    </div>
+  ), [loading, myFoodDonations, myMoneyDonations, enhancedFoodColumns, enhancedMoneyColumns]);
+
+  const renderProfile = useCallback(() => <Profile />, []);
 
   const sections = useMemo(() => ({
-    overview: () => (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Donor Dashboard</h1>
-
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            {error}
-          </div>
-        )}
-
-        {/* Food Donation Summary */}
-        <div>
-          <h2 className="text-xl font-semibold mb-3 text-green-700">🍎 Food Donations</h2>
-          <div className="grid grid-cols-3 gap-4">
-            <DashboardCard title="Total Food Donations" value={totalFoodDonations} icon={FaUtensils} color="green" />
-            <DashboardCard title="Active Donations" value={activeDonations} icon={FaClock} color="yellow" />
-            <DashboardCard title="Completed Donations" value={completedDonations} icon={FaCheckCircle} color="blue" />
-          </div>
-        </div>
-
-        {/* Money Donation Summary */}
-        <div>
-          <h2 className="text-xl font-semibold mb-3 text-orange-700">💰 Money Donations</h2>
-          <div className="grid grid-cols-1 gap-4">
-            <DashboardCard title="Total Money Donated" value={`₹${totalMoneyDonated}`} icon={FaMoneyBillWave} color="orange" />
-          </div>
-        </div>
-      </div>
-    ),
-
-    'donate-food': () => (
-      <div>
-        <h1 className="text-3xl font-bold mb-6">Donate Food</h1>
-
-        {success && <div className="text-green-600 mb-2">{success}</div>}
-        {error && <div className="text-red-600 mb-2">{error}</div>}
-
-        <form onSubmit={handleSubmit} className="space-y-3 max-w-md">
-          <input name="foodType" value={formData.foodType} onChange={handleChange} placeholder="Food Type" className="w-full border p-2" required />
-          <input name="quantity" value={formData.quantity} onChange={handleChange} placeholder="Quantity" className="w-full border p-2" required />
-          <input name="location" value={formData.location} onChange={handleChange} placeholder="Location" className="w-full border p-2" required />
-          <input type="datetime-local" name="expiryTime" value={formData.expiryTime} onChange={handleChange} className="w-full border p-2" required />
-
-          <button className="bg-green-600 text-white px-4 py-2" disabled={submitting}>
-            {submitting ? 'Creating...' : 'Donate Food'}
-          </button>
-        </form>
-      </div>
-    ),
-
-    'donate-money': () => (
-      <div>
-        <h1 className="text-3xl font-bold mb-6">Donate Money</h1>
-        <p className="text-gray-600 mb-6">Click the button below to proceed to the secure payment page.</p>
-        <button 
-          onClick={() => navigate('/payment')} 
-          className="bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-700 transition-colors"
-        >
-          Proceed to Payment
-        </button>
-      </div>
-    ),
-
-    'my-donations': () => (
-      <div className="space-y-8">
-        {/* Food Donations Table */}
-        <div>
-          <h2 className="text-2xl font-bold mb-4 text-green-700">🍎 My Food Donations</h2>
-          {loading ? (
-            <div className="text-center py-8">Loading...</div>
-          ) : myFoodDonations.length > 0 ? (
-            <DataTable columns={enhancedFoodColumns} data={myFoodDonations} />
-          ) : (
-            <p className="text-gray-500">No food donations yet.</p>
-          )}
-        </div>
-
-        {/* Money Donations Table */}
-        <div>
-          <h2 className="text-2xl font-bold mb-4 text-orange-700">💰 My Money Donations</h2>
-          {loading ? (
-            <div className="text-center py-8">Loading...</div>
-          ) : myMoneyDonations.length > 0 ? (
-            <DataTable columns={enhancedMoneyColumns} data={myMoneyDonations} />
-          ) : (
-            <p className="text-gray-500">No money donations yet.</p>
-          )}
-        </div>
-      </div>
-    ),
-
-    profile: () => (
-      <Profile />
-    ),
-
-  }), [
-    totalFoodDonations,
-    activeDonations,
-    completedDonations,
-    totalMoneyDonated,
-    success,
-    error,
-    formData,
-    myFoodDonations,
-    myMoneyDonations,
-    loading,
-    navigate
-  ]);
+    overview: renderOverview,
+    'donate-food': renderDonateFood,
+    'donate-money': renderDonateMoney,
+    'my-donations': renderMyDonations,
+    profile: renderProfile,
+  }), [renderOverview, renderDonateFood, renderDonateMoney, renderMyDonations, renderProfile]);
 
   return (
     <>
