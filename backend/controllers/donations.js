@@ -36,8 +36,11 @@ export const getFoodDonations = async (req, res, next) => {
     if (req.user.role === 'donor') {
       query.donorId = req.user.id;
     } else if (req.user.role === 'ngo') {
-      // NGOs can see pending donations
-      query.status = 'pending';
+      // NGOs can see pending donations OR donations they have accepted
+      query.$or = [
+        { status: 'pending' },
+        { status: 'accepted', ngoId: req.user.id }
+      ];
     } else if (req.user.role === 'volunteer') {
       // Volunteers can see both accepted and completed donations
       query.status = { $in: ['accepted', 'completed'] };
