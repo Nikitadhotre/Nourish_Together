@@ -170,11 +170,11 @@ const Home = () => {
                 />
               </div>
               <div data-aos="fade-left" data-aos-delay="200">
-                <p className="text-lg text-gray-700">
+                <div className="text-lg text-gray-700">
                   <h2 className="text-3xl text-black font-bold text-left mb-4 ">The Growing Imbalance Between Surplus and Scarcity</h2>
 
                   Every day, millions go hungry while large amounts of edible food are wasted. This imbalance isn’t caused by food shortages, but by gaps in distribution and coordination. Surplus food from restaurants, events, and households is discarded while vulnerable communities suffer. Without an efficient redistribution system, we waste resources, harm the environment, and fail those who need support most.
-                </p>
+                </div>
               </div>
             </div>
           </div>

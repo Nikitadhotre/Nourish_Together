@@ -79,37 +79,35 @@ const DonorDashboard = () => {
     }));
   }, []);
 
-  const handleSubmit = useCallback(async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    setSubmitting(true);
-    setError('');
-    setSuccess('');
+  setSubmitting(true);
+  setError('');
+  setSuccess('');
 
-    try {
-      const res = await donationsAPI.createFoodDonation(formData);
-      const newDonation = res.data.data || res.data;
+  try {
+    const res = await donationsAPI.createFoodDonation(formData);
+    const newDonation = res.data.data || res.data;
 
-      setDonations(prev => [...prev, newDonation]);
-      setSuccess('✅ Food donated successfully!');
+    setDonations(prev => [...prev, newDonation]);
+    setSuccess('✅ Food donated successfully!');
 
-      setTimeout(() => {
-        setSuccess('');
-      }, 3000);
+    setTimeout(() => setSuccess(''), 3000);
 
-      setFormData({
-        foodType: '',
-        quantity: '',
-        location: '',
-        expiryTime: '',
-      });
+    setFormData({
+      foodType: '',
+      quantity: '',
+      location: '',
+      expiryTime: '',
+    });
 
-    } catch (error) {
-      setError(error.response?.data?.message || 'Failed to create donation');
-    } finally {
-      setSubmitting(false);
-    }
-  }, [formData]);
+  } catch (error) {
+    setError(error.response?.data?.message || 'Failed to create donation');
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   /* ---------------- CALCULATE STATS ---------------- */
 
@@ -260,26 +258,25 @@ const DonorDashboard = () => {
     </div>
   ), [error, totalFoodDonations, activeDonations, completedDonations, totalMoneyDonated]);
 
-  const renderDonateFood = useCallback(() => (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">Donate Food</h1>
+  const renderDonateFood = () => (
+  <div>
+    <h1 className="text-3xl font-bold mb-6">Donate Food</h1>
 
-      {success && <div className="text-green-600 mb-2">{success}</div>}
-      {error && <div className="text-red-600 mb-2">{error}</div>}
+    {success && <div className="text-green-600 mb-2">{success}</div>}
+    {error && <div className="text-red-600 mb-2">{error}</div>}
 
-      <form onSubmit={handleSubmit} className="space-y-3 max-w-md">
-        <input name="foodType" value={formData.foodType} onChange={handleChange} placeholder="Food Type" className="w-full border p-2" required />
-        <input name="quantity" value={formData.quantity} onChange={handleChange} placeholder="Quantity" className="w-full border p-2" required />
-        <input name="location" value={formData.location} onChange={handleChange} placeholder="Location" className="w-full border p-2" required />
-        <input type="datetime-local" name="expiryTime" value={formData.expiryTime} onChange={handleChange} className="w-full border p-2" required />
+    <form onSubmit={handleSubmit} className="space-y-3 max-w-md">
+      <input name="foodType" value={formData.foodType} onChange={handleChange} placeholder="Food Type" className="w-full border p-2" required />
+      <input name="quantity" value={formData.quantity} onChange={handleChange} placeholder="Quantity" className="w-full border p-2" required />
+      <input name="location" value={formData.location} onChange={handleChange} placeholder="Location" className="w-full border p-2" required />
+      <input type="datetime-local" name="expiryTime" value={formData.expiryTime} onChange={handleChange} className="w-full border p-2" required />
 
-        <button className="bg-green-600 text-white px-4 py-2" disabled={submitting}>
-          {submitting ? 'Creating...' : 'Donate Food'}
-        </button>
-      </form>
-    </div>
-  ), [formData, success, error, handleSubmit, submitting]);
-
+      <button className="bg-green-600 text-white px-4 py-2" disabled={submitting}>
+        {submitting ? 'Creating...' : 'Donate Food'}
+      </button>
+    </form>
+  </div>
+);
   const renderDonateMoney = useCallback(() => (
     <div>
       <h1 className="text-3xl font-bold mb-6">Donate Money</h1>
@@ -323,13 +320,13 @@ const DonorDashboard = () => {
 
   const renderProfile = useCallback(() => <Profile />, []);
 
-  const sections = useMemo(() => ({
-    overview: renderOverview,
-    'donate-food': renderDonateFood,
-    'donate-money': renderDonateMoney,
-    'my-donations': renderMyDonations,
-    profile: renderProfile,
-  }), [renderOverview, renderDonateFood, renderDonateMoney, renderMyDonations, renderProfile]);
+ const sections = {
+  overview: renderOverview,
+  'donate-food': renderDonateFood,
+  'donate-money': renderDonateMoney,
+  'my-donations': renderMyDonations,
+  profile: renderProfile,
+};
 
   return (
     <>
