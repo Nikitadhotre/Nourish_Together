@@ -20,7 +20,7 @@ const DashboardLayout = ({ menuItems, sections, defaultSection = 'overview' }) =
       <div className="ml-64 mt-16 h-[calc(100vh-4rem)] overflow-y-auto bg-gray-50 p-6">
         {/* This renders the currently selected dashboard section */}
         {/* Each page like DonorDashboard or NGODashboard passes its own section components here */}
-        <ActiveComponent />
+        {ActiveComponent()}
       </div>
     </>
   );
