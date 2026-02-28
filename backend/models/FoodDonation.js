@@ -35,6 +35,9 @@ const foodDonationSchema = new mongoose.Schema({
     type: mongoose.Schema.ObjectId,
     ref: 'User',
   },
+  completedAt: {
+    type: Date,
+  },
 }, {
   timestamps: true,
 });

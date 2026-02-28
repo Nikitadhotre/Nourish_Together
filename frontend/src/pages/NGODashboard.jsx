@@ -4,7 +4,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import DashboardCard from '../components/DashboardCard';
 import DataTable from '../components/DataTable';
 import Profile from './Profile';
-import { FaClock, FaCheckCircle, FaUtensils, FaHome, FaGift, FaHandsHelping, FaUser } from 'react-icons/fa';
+import { FaClock, FaCheckCircle, FaUtensils, FaHome, FaGift, FaHandsHelping, FaUser, FaHistory } from 'react-icons/fa';
 
 const NGODashboard = () => {
   const [donations, setDonations] = useState([]);
@@ -96,6 +96,28 @@ const NGODashboard = () => {
     },
   ];
 
+  // History columns - shows completed donations with completion details
+  const historyColumns = [
+    { 
+      key: 'donorName', 
+      header: 'Donor Name',
+      render: (value, row) => row.donorId?.name || row.donorId?.email || 'N/A'
+    },
+    { key: 'foodType', header: 'Food Type' },
+    { key: 'quantity', header: 'Quantity' },
+    { key: 'location', header: 'Location' },
+    {
+      key: 'completedAt',
+      header: 'Completed On',
+      render: (value) => value ? new Date(value).toLocaleString() : new Date().toLocaleString()
+    },
+    {
+      key: 'mealsProvided',
+      header: 'Meals Provided',
+      render: (value, row) => row.quantity ? row.quantity * 10 : '-'
+    },
+  ];
+
   const availableActions = [
     {
       label: 'Accept',
@@ -118,6 +140,7 @@ const NGODashboard = () => {
     { key: 'profile', label: 'Profile', icon: FaUser },
     { key: 'available-donations', label: 'Available Donations', icon: FaGift },
     { key: 'accepted-donations', label: 'Accepted Donations', icon: FaHandsHelping },
+    { key: 'history', label: 'History', icon: FaHistory },
   ];
 
   // Section components
@@ -194,6 +217,56 @@ const NGODashboard = () => {
 
     profile: () => (
       <Profile />
+    ),
+
+    history: () => (
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Donation History</h1>
+        
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <DashboardCard
+            title="Total Completed"
+            value={completedDonations.length}
+            icon={FaCheckCircle}
+            color="green"
+          />
+          <DashboardCard
+            title="Total Meals Distributed"
+            value={completedDonations.reduce((total, d) => total + (d.quantity || 0) * 10, 0)}
+            icon={FaUtensils}
+            color="blue"
+          />
+          <DashboardCard
+            title="Total Quantity Received"
+            value={completedDonations.reduce((total, d) => total + (d.quantity || 0), 0)}
+            icon={FaGift}
+            color="yellow"
+          />
+        </div>
+
+        {/* History Table */}
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900">Completed Donations</h2>
+            <p className="text-sm text-gray-500 mt-1">A complete history of all donations that have been completed</p>
+          </div>
+          {loading ? (
+            <div className="text-center py-8">Loading...</div>
+          ) : completedDonations.length === 0 ? (
+            <div className="text-center py-12">
+              <FaHistory className="text-6xl text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg">No completed donations yet</p>
+              <p className="text-gray-400">Completed donations will appear here</p>
+            </div>
+          ) : (
+            <DataTable
+              columns={historyColumns}
+              data={completedDonations}
+            />
+          )}
+        </div>
+      </div>
     ),
   };
 

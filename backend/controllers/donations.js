@@ -36,10 +36,11 @@ export const getFoodDonations = async (req, res, next) => {
     if (req.user.role === 'donor') {
       query.donorId = req.user.id;
     } else if (req.user.role === 'ngo') {
-      // NGOs can see pending donations OR donations they have accepted
+      // NGOs can see pending donations OR donations they have accepted OR completed by them
       query.$or = [
         { status: 'pending' },
-        { status: 'accepted', ngoId: req.user.id }
+        { status: 'accepted', ngoId: req.user.id },
+        { status: 'completed', ngoId: req.user.id }
       ];
     } else if (req.user.role === 'volunteer') {
       // Volunteers can see both accepted and completed donations
@@ -98,7 +99,7 @@ export const acceptFoodDonation = async (req, res, next) => {
 
 // @desc    Complete food donation
 // @route   PUT /api/donations/food/:id/complete
-// @access  Private (Volunteer)
+// @access  Private (NGO or Volunteer)
 export const completeFoodDonation = async (req, res, next) => {
   try {
     const donation = await FoodDonation.findById(req.params.id);
@@ -117,8 +118,24 @@ export const completeFoodDonation = async (req, res, next) => {
       });
     }
 
+    // Check if NGO is the one who accepted the donation
+    if (req.user.role === 'ngo' && donation.ngoId?.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only complete donations you have accepted',
+      });
+    }
+
     donation.status = 'completed';
-    donation.volunteerId = req.user.id;
+    donation.completedAt = new Date();
+    
+    // If NGO completes it, record their ID; otherwise record volunteer
+    if (req.user.role === 'ngo') {
+      donation.ngoId = req.user.id;
+    } else if (req.user.role === 'volunteer') {
+      donation.volunteerId = req.user.id;
+    }
+    
     await donation.save();
 
     res.status(200).json({

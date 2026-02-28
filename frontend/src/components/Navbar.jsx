@@ -17,20 +17,9 @@ import toast from "react-hot-toast";
 const Navbar = ({ isDashboard = false }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [userName, setUserName] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
-
-  // Initialize userName from localStorage or user object
-  useEffect(() => {
-    const storedName = localStorage.getItem("userName");
-    if (storedName) {
-      setUserName(storedName);
-    } else if (user?.name) {
-      setUserName(user.name);
-    }
-  }, [user]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -46,7 +35,6 @@ const Navbar = ({ isDashboard = false }) => {
 
   const handleLogout = () => {
     toast.success("Logged out successfully!");
-    setUserName("");
     logout();
     navigate("/");
   };
@@ -129,7 +117,7 @@ const Navbar = ({ isDashboard = false }) => {
 
           {/* Right Side - Auth Buttons or User Menu */}
           <div className="flex items-center space-x-4">
-            {user || userName ? (
+            {user ? (
               <>
                 {/* User Dropdown */}
                 <div className="relative" ref={dropdownRef}>
@@ -141,7 +129,7 @@ const Navbar = ({ isDashboard = false }) => {
                       <FaUser className="text-green-600 text-sm" />
                     </div>
                     <span className="hidden md:inline-block text-gray-700 font-medium max-w-[120px] truncate">
-                      {userName || user?.name}
+                      {user?.name}
                     </span>
                     <FaChevronDown
                       className={`text-gray-500 text-xs transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`}
@@ -158,7 +146,7 @@ const Navbar = ({ isDashboard = false }) => {
                   >
                     <div className="px-4 py-2 border-b border-gray-100">
                       <p className="text-sm font-medium text-gray-900 truncate">
-                        {userName || user?.name}
+                        {user?.name}
                       </p>
                       <p className="text-xs text-gray-500 capitalize">
                         {user?.role}
